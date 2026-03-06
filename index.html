@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GNN Physics Simulation — Diagram</title>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg: #e8ddd0;
+  --bg2: #ddd0c0;
+  --card: rgba(255,250,242,0.82);
+  --card-border: rgba(200,180,150,0.5);
+  --teal: #4ab8a8;
+  --teal2: #2a8878;
+  --amber: #e8a030;
+  --amber2: #c87818;
+  --red: #d04040;
+  --blue: #4070c8;
+  --text: #2a1a08;
+  --text2: #6a4a28;
+  --mesh-bg: #c0d8d0;
+  --world-bg: #b8cce0;
+  --panel: rgba(240,228,210,0.9);
+  --shadow: 0 4px 24px rgba(80,40,0,0.13);
+}
+
+body {
+  background: linear-gradient(160deg, #ede0cc 0%, #ddd0b8 50%, #e8ddc8 100%);
+  min-height: 100vh;
+  font-family: 'EB Garamond', serif;
+  color: var(--text);
+  padding: 32px 20px 60px;
+}
+
+/* ── MAIN LAYOUT ── */
+.diagram {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* ── TITLE ── */
+.title-row {
+  text-align: center;
+  animation: fadeUp 0.8s ease both;
+}
+.title-row h1 {
+  font-size: 1.55rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+.title-row p {
+  font-size: 0.9rem;
+  color: var(--text2);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* ── MESH SIMULATION ROW ── */
+.sim-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  animation: fadeUp 0.8s 0.1s ease both;
+  opacity: 0;
+}
+.sim-panel {
+  position: relative;
+  width: 200px;
+  height: 170px;
+  flex-shrink: 0;
+}
+.sim-canvas {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  border: 1.5px solid var(--card-border);
+  background: rgba(180,210,220,0.45);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.sim-label {
+  position: absolute;
+  bottom: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.sim-label sup { font-size: 0.6rem; }
+
+/* Arrow between sim panels */
+.sim-arrow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 8px;
+  margin-bottom: 20px;
+  gap: 2px;
+}
+.sim-arrow .arr-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text2);
+  text-align: center;
+}
+.sim-arrow .arr-line {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sim-arrow .arr-line span {
+  font-size: 1.2rem;
+  color: var(--text2);
+}
+.sim-arrow.dashed .arr-line span {
+  opacity: 0.5;
+  letter-spacing: 2px;
+}
+.update-circle {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(140,100,60,0.5);
+  background: var(--card);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  margin: 0 6px;
+}
+
+/* ── GNN BLOCK ROW ── */
+.gnn-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 16px;
+  animation: fadeUp 0.8s 0.25s ease both;
+  opacity: 0;
+}
+.gnn-box {
+  background: rgba(230,210,185,0.75);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(200,175,140,0.6);
+  border-radius: 14px;
+  padding: 12px 10px 14px;
+  width: 210px;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.gnn-box h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--text);
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(160,130,90,0.3);
+}
+.gnn-arrow {
+  font-size: 1.6rem;
+  color: var(--text2);
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+.gnn-label {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text2);
+  font-style: italic;
+  margin-top: 6px;
+  width: 210px;
+}
+
+/* ── MINI GRAPH ── */
+.mini-graph {
+  width: 100%;
+  height: 110px;
+  position: relative;
+}
+.mini-graph svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── MESSAGE PASSING EQUATION ── */
+.eq-row {
+  background: rgba(230,210,185,0.8);
+  border: 1.5px solid rgba(200,175,140,0.55);
+  border-radius: 14px;
+  padding: 18px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  animation: fadeUp 0.8s 0.4s ease both;
+  opacity: 0;
+  position: relative;
+}
+.eq-row::before {
+  content: 'Message Passing ×L';
+  position: absolute;
+  top: -11px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  padding: 0 10px;
+  font-size: 0.75rem;
+  color: var(--text2);
+  font-style: italic;
+  white-space: nowrap;
+}
+.eq-item {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text);
+  text-align: center;
+  line-height: 1.6;
+}
+.eq-item .lhs { color: var(--red); }
+.eq-item .fn  { color: var(--teal2); }
+.eq-item .var { color: var(--text); }
+.eq-sep {
+  width: 1px; height: 40px;
+  background: rgba(160,130,90,0.3);
+}
+
+/* ── BOTTOM PANELS ── */
+.bottom-row {
+  display: flex;
+  gap: 24px;
+  animation: fadeUp 0.8s 0.55s ease both;
+  opacity: 0;
+}
+.space-panel {
+  flex: 1;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1.5px solid var(--card-border);
+  box-shadow: var(--shadow);
+  position: relative;
+  height: 240px;
+}
+.space-panel canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.space-panel .sp-label {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.88rem;
+  color: var(--text);
+  font-style: italic;
+  background: rgba(255,250,240,0.72);
+  padding: 3px 14px;
+  border-radius: 20px;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  border: 1px solid rgba(200,180,150,0.4);
+}
+.sp-label em { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
+
+/* animations */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:none; }
+}
+@keyframes pulse {
+  0%,100% { r: 5; }
+  50%      { r: 7; }
+}
+@keyframes dash {
+  to { stroke-dashoffset: -20; }
+}
+@keyframes meshMove {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
+  100% { transform: translateY(0); }
+}
+
+.pulse-node { animation: pulse 2s ease-in-out infinite; }
+.flow-edge  { stroke-dasharray: 6 4; animation: dash 1.2s linear infinite; }
+
+/* message passing active highlight */
+.mp-active {
+  stroke: var(--red);
+  stroke-width: 2.5;
+  stroke-dasharray: 5 3;
+  animation: dash 0.8s linear infinite;
+}
+
+/* Cloth mesh SVG */
+.cloth-svg {
+  width:100%; height:100%;
+}
+.cloth-mesh { animation: meshMove 3s ease-in-out infinite; }
+
+</style>
+</head>
+<body>
+<div class="diagram">
+
+  <!-- TITLE -->
+  <div class="title-row">
+    <h1>Graph Neural Networks for Physics Simulation</h1>
+    <p>Mesh-based GNN — Encoder · Processor · Decoder with Temporal Rollout</p>
+  </div>
+
+  <!-- SIM ROW: M^t → Update → M^(t+1) → Rollout → M^(t+2) -->
+  <div class="sim-row">
+
+    <!-- M^t -->
+    <div class="sim-panel">
+      <div class="sim-canvas" id="cloth0"></div>
+      <div class="sim-label">M<sup>t</sup></div>
+    </div>
+
+    <!-- Arrow + Update circle -->
+    <div class="sim-arrow" style="align-items:center; flex-direction:column; margin-bottom:20px;">
+      <div class="arr-label" style="font-size:0.7rem; color:var(--text2);">q<sub>i</sub><sup>t</sup></div>
+      <div style="display:flex; align-items:center; gap:4px; margin:2px 0;">
+        <div style="width:28px;height:2px;background:var(--text2);opacity:0.5;"></div>
+        <div class="update-circle">Update</div>
+        <div style="width:28px;height:2px;background:var(--text2);opacity:0.5;"></div>
+        <div style="font-size:1rem;color:var(--text2);">→</div>
+      </div>
+      <div class="arr-label" style="font-size:0.7rem; color:var(--text2);">p<sub>i</sub></div>
+    </div>
+
+    <!-- M^(t+1) -->
+    <div class="sim-panel">
+      <div class="sim-canvas" id="cloth1"></div>
+      <div class="sim-label">M<sup>t+1</sup></div>
+    </div>
+
+    <!-- Dashed rollout arrow -->
+    <div class="sim-arrow dashed" style="margin-bottom:20px;">
+      <div class="arr-label">Rollout</div>
+      <div class="arr-line">
+        <span style="letter-spacing:4px; color:var(--text2); font-size:1.1rem;">- - - →</span>
+      </div>
+    </div>
+
+    <!-- M^(t+2) -->
+    <div class="sim-panel">
+      <div class="sim-canvas" id="cloth2"></div>
+      <div class="sim-label">M<sup>t+2</sup></div>
+    </div>
+
+  </div>
+
+  <!-- GNN BOXES: Encoder → Processor → Decoder -->
+  <div style="margin-top:28px; animation: fadeUp 0.8s 0.22s ease both; opacity:0;">
+    <div class="gnn-row">
+
+      <!-- Encoder -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="gnn-box">
+          <h3>Encoder</h3>
+          <div class="mini-graph">
+            <svg id="enc-svg" viewBox="0 0 190 100"></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="gnn-arrow">→</div>
+
+      <!-- Processor -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="gnn-box">
+          <h3>Processor</h3>
+          <div class="mini-graph">
+            <svg id="proc-svg" viewBox="0 0 190 100"></svg>
+          </div>
+        </div>
+        <div class="gnn-label">Message Passing ×L</div>
+      </div>
+
+      <div class="gnn-arrow">→</div>
+
+      <!-- Decoder -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="gnn-box">
+          <h3>Decoder</h3>
+          <div class="mini-graph">
+            <svg id="dec-svg" viewBox="0 0 190 100"></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- EQUATIONS -->
+  <div class="eq-row">
+    <div class="eq-item">
+      <span class="lhs">e<sup>′M</sup><sub>ij</sub></span>
+      <span class="var"> ← </span>
+      <span class="fn">f<sup>M</sup></span>
+      <span class="var">(e<sup>M</sup><sub>ij</sub>, v<sub>i</sub>, v<sub>j</sub>)</span>
+    </div>
+    <div class="eq-sep"></div>
+    <div class="eq-item">
+      <span class="lhs">e<sup>′W</sup><sub>ij</sub></span>
+      <span class="var"> ← </span>
+      <span class="fn">f<sup>W</sup></span>
+      <span class="var">(e<sup>W</sup><sub>ij</sub>, v<sub>i</sub>, v<sub>j</sub>)</span>
+    </div>
+    <div class="eq-sep"></div>
+    <div class="eq-item">
+      <span class="lhs">v<sup>′</sup><sub>i</sub></span>
+      <span class="var"> ← </span>
+      <span class="fn">f<sup>V</sup></span>
+      <span class="var">(v<sub>i</sub>, Σ<sub>j</sub> e<sup>′M</sup><sub>ij</sub>, Σ<sub>j</sub> e<sup>′W</sup><sub>ij</sub>)</span>
+    </div>
+  </div>
+
+  <!-- BOTTOM: World Space + Mesh Space -->
+  <div class="bottom-row">
+
+    <div class="space-panel" style="background:linear-gradient(135deg,#b0c8d8,#8ab0c8);">
+      <canvas id="world-canvas"></canvas>
+      <div class="sp-label">World Space <em>x</em></div>
+    </div>
+
+    <div class="space-panel" style="background:linear-gradient(135deg,#a8ccb8,#80b090);">
+      <canvas id="mesh-canvas"></canvas>
+      <div class="sp-label">Mesh Space <em>u</em></div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ─── CLOTH MESH SVG RENDERER ───────────────────────────────────────────────
+function makeClothSVG(containerId, phase, hasBall) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 200 170');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.style.position = 'absolute';
+  svg.style.top = 0; svg.style.left = 0;
+
+  // Background gradient
+  const defs = document.createElementNS(ns, 'defs');
+  const grad = document.createElementNS(ns, 'linearGradient');
+  grad.setAttribute('id', `bg-${containerId}`);
+  grad.setAttribute('x1','0'); grad.setAttribute('y1','0');
+  grad.setAttribute('x2','0.5'); grad.setAttribute('y2','1');
+  [{o:'0%',c:'#c8dce8'},{o:'100%',c:'#a0bcd0'}].forEach(s => {
+    const stop = document.createElementNS(ns, 'stop');
+    stop.setAttribute('offset', s.o);
+    stop.setAttribute('stop-color', s.c);
+    grad.appendChild(stop);
+  });
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('width','200'); bg.setAttribute('height','170');
+  bg.setAttribute('fill', `url(#bg-${containerId})`);
+  svg.appendChild(bg);
+
+  // Red corner dots (fixed pins)
+  [[10,5],[180,5]].forEach(([x,y]) => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', x); c.setAttribute('cy', y);
+    c.setAttribute('r', '5');
+    c.setAttribute('fill', '#d04040');
+    svg.appendChild(c);
+  });
+
+  // Cloth mesh — deformed grid based on phase
+  const cols = 9, rows = 8;
+  const pts = [];
+  for (let r = 0; r <= rows; r++) {
+    pts.push([]);
+    for (let c = 0; c <= cols; c++) {
+      const tx = 10 + c * 20;
+      const ty = 8 + r * 18;
+      // deform: sag + bulge for ball
+      const sag = r * r * 0.18;
+      const cx0 = 100 + (c - cols/2) * 1.5 * (r/rows);
+      const ballInfluenceX = cx0 - 95;
+      const ballInfluenceY = ty + sag - 90;
+      const dist = Math.sqrt(ballInfluenceX**2 + ballInfluenceY**2);
+      const push = hasBall ? Math.max(0, 28 - dist) * 0.35 : 0;
+      const angle = Math.atan2(ballInfluenceY, ballInfluenceX);
+      const px = cx0 + Math.cos(angle) * push + Math.sin(phase + c * 0.3) * 1.5;
+      const py = ty + sag + Math.cos(phase + r * 0.2) * 1.2 + push * 0.3;
+      pts[r].push([px, py]);
+    }
+  }
+
+  // Draw mesh edges
+  for (let r = 0; r <= rows; r++) {
+    for (let c = 0; c <= cols; c++) {
+      if (c < cols) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', pts[r][c][0]);
+        line.setAttribute('y1', pts[r][c][1]);
+        line.setAttribute('x2', pts[r][c+1][0]);
+        line.setAttribute('y2', pts[r][c+1][1]);
+        line.setAttribute('stroke', 'rgba(40,80,100,0.35)');
+        line.setAttribute('stroke-width', '0.8');
+        svg.appendChild(line);
+      }
+      if (r < rows) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', pts[r][c][0]);
+        line.setAttribute('y1', pts[r][c][1]);
+        line.setAttribute('x2', pts[r+1][c][0]);
+        line.setAttribute('y2', pts[r+1][c][1]);
+        line.setAttribute('stroke', 'rgba(40,80,100,0.35)');
+        line.setAttribute('stroke-width', '0.8');
+        svg.appendChild(line);
+      }
+      // diagonal
+      if (r < rows && c < cols) {
+        const line = document.createElementNS(ns, 'line');
+        line.setAttribute('x1', pts[r][c][0]);
+        line.setAttribute('y1', pts[r][c][1]);
+        line.setAttribute('x2', pts[r+1][c+1][0]);
+        line.setAttribute('y2', pts[r+1][c+1][1]);
+        line.setAttribute('stroke', 'rgba(40,80,100,0.22)');
+        line.setAttribute('stroke-width', '0.6');
+        svg.appendChild(line);
+      }
+    }
+  }
+
+  // Ball (sphere)
+  if (hasBall) {
+    const ballGrad = document.createElementNS(ns, 'radialGradient');
+    ballGrad.setAttribute('id', `ball-${containerId}`);
+    ballGrad.setAttribute('cx','35%'); ballGrad.setAttribute('cy','35%');
+    ballGrad.setAttribute('r','60%');
+    [{o:'0%',c:'#e8e8e8'},{o:'60%',c:'#b0b0b0'},{o:'100%',c:'#707070'}].forEach(s => {
+      const stop = document.createElementNS(ns, 'stop');
+      stop.setAttribute('offset', s.o);
+      stop.setAttribute('stop-color', s.c);
+      ballGrad.appendChild(stop);
+    });
+    defs.appendChild(ballGrad);
+
+    const ball = document.createElementNS(ns, 'circle');
+    ball.setAttribute('cx', '95');
+    ball.setAttribute('cy', '90');
+    ball.setAttribute('r', '26');
+    ball.setAttribute('fill', `url(#ball-${containerId})`);
+    ball.setAttribute('opacity', '0.9');
+    svg.appendChild(ball);
+
+    // grid lines on ball
+    for (let i = 0; i < 5; i++) {
+      const lat = document.createElementNS(ns, 'ellipse');
+      lat.setAttribute('cx','95'); lat.setAttribute('cy','90');
+      lat.setAttribute('rx', (26 * Math.sin((i+1)*Math.PI/6)).toFixed(1));
+      lat.setAttribute('ry', '3');
+      lat.setAttribute('fill','none');
+      lat.setAttribute('stroke','rgba(80,80,80,0.25)');
+      lat.setAttribute('stroke-width','0.8');
+      lat.setAttribute('transform', `translate(0, ${(i-2)*9})`);
+      svg.appendChild(lat);
+    }
+  }
+
+  el.style.position = 'relative';
+  el.appendChild(svg);
+
+  // Animate cloth
+  let t = phase;
+  function animate() {
+    t += 0.015;
+    const allLines = svg.querySelectorAll('line');
+    // subtle breathing - rebuild is too heavy, just nudge opacity
+    allLines.forEach(l => {
+      l.setAttribute('stroke-opacity', (0.3 + Math.sin(t) * 0.05).toFixed(2));
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+makeClothSVG('cloth0', 0, true);
+makeClothSVG('cloth1', 0.8, true);
+makeClothSVG('cloth2', 1.6, false);
+
+// ─── MINI GRAPH BUILDER ────────────────────────────────────────────────────
+function buildGraph(svgId, mode) {
+  const svg = document.getElementById(svgId);
+  const ns = 'http://www.w3.org/2000/svg';
+
+  // Node layout: teal + amber
+  const nodes = [
+    // row 0
+    {x:30, y:20, t:'teal'}, {x:75, y:15, t:'teal'}, {x:120, y:20, t:'teal'}, {x:160, y:18, t:'teal'},
+    // row 1
+    {x:18, y:55, t:'teal'}, {x:55, y:52, t:'amber'},{x:100, y:50, t:'amber'},{x:140, y:55, t:'teal'},  {x:175, y:50, t:'teal'},
+    // row 2
+    {x:30, y:88, t:'teal'}, {x:75, y:85, t:'teal'},{x:118, y:88, t:'teal'}, {x:158, y:84, t:'teal'},
+  ];
+
+  // Edges
+  const edges = [
+    [0,1],[1,2],[2,3],
+    [4,5],[5,6],[6,7],[7,8],
+    [9,10],[10,11],[11,12],
+    [0,4],[1,5],[2,6],[3,7],
+    [4,9],[5,10],[6,11],[7,12],
+    [1,6],[5,10],[0,5],[1,4],[2,7],[3,8],
+    [5,9],[6,10],[10,5]
+  ];
+
+  // Draw edges
+  edges.forEach(([a,b], i) => {
+    const line = document.createElementNS(ns, 'line');
+    const na = nodes[a], nb = nodes[b];
+    line.setAttribute('x1', na.x); line.setAttribute('y1', na.y);
+    line.setAttribute('x2', nb.x); line.setAttribute('y2', nb.y);
+
+    // In processor mode, highlight active message edges
+    if (mode === 'proc' && (i < 4 || (i >= 14 && i <= 18))) {
+      line.setAttribute('stroke', '#c03030');
+      line.setAttribute('stroke-width', '1.8');
+      line.setAttribute('stroke-dasharray', '4 3');
+      line.style.animation = 'dash 0.9s linear infinite';
+    } else {
+      line.setAttribute('stroke', 'rgba(80,60,30,0.35)');
+      line.setAttribute('stroke-width', '1.2');
+    }
+    svg.appendChild(line);
+  });
+
+  // Draw nodes
+  nodes.forEach((n, i) => {
+    const c = document.createElementNS(ns, 'circle');
+    c.setAttribute('cx', n.x); c.setAttribute('cy', n.y); c.setAttribute('r', '6');
+    if (n.t === 'teal') {
+      c.setAttribute('fill', '#4ab8a8');
+      c.setAttribute('stroke', '#2a8878');
+    } else {
+      c.setAttribute('fill', '#e8a030');
+      c.setAttribute('stroke', '#b07010');
+    }
+    c.setAttribute('stroke-width', '1.5');
+
+    if (mode === 'proc' && (i === 5 || i === 6)) {
+      // pulsing central nodes
+      c.style.animation = `pulse 1.5s ease-in-out infinite ${i*0.3}s`;
+      c.setAttribute('r', '7');
+    }
+
+    svg.appendChild(c);
+
+    // In decoder: draw arrows/vectors on some nodes
+    if (mode === 'dec' && i < 9 && i % 2 === 0) {
+      const angle = [-70, -50, -110, -80, -60, 30, -90, -40, -70][i] * Math.PI / 180;
+      const len = 14;
+      const arrow = document.createElementNS(ns, 'line');
+      arrow.setAttribute('x1', n.x); arrow.setAttribute('y1', n.y);
+      arrow.setAttribute('x2', n.x + Math.cos(angle) * len);
+      arrow.setAttribute('y2', n.y + Math.sin(angle) * len);
+      arrow.setAttribute('stroke', i % 4 === 0 ? '#4070c8' : '#2a8878');
+      arrow.setAttribute('stroke-width', '2');
+      arrow.setAttribute('marker-end', 'url(#arr)');
+      svg.appendChild(arrow);
+    }
+  });
+
+  // Arrow marker
+  if (mode === 'dec') {
+    const defs = document.createElementNS(ns, 'defs');
+    const marker = document.createElementNS(ns, 'marker');
+    marker.setAttribute('id','arr'); marker.setAttribute('markerWidth','6');
+    marker.setAttribute('markerHeight','6'); marker.setAttribute('refX','3');
+    marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d','M0,0 L0,6 L6,3 z');
+    path.setAttribute('fill','#4070c8');
+    marker.appendChild(path);
+    defs.appendChild(marker);
+    svg.insertBefore(defs, svg.firstChild);
+  }
+}
+
+buildGraph('enc-svg', 'enc');
+buildGraph('proc-svg', 'proc');
+buildGraph('dec-svg', 'dec');
+
+// ─── CANVAS INIT — wait for layout ────────────────────────────────────────
+window.addEventListener('load', function() {
+
+// ─── WORLD SPACE CANVAS ───────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('world-canvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const W = rect.width * dpr;
+  const H = rect.height * dpr;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  const ctx = canvas.getContext('2d');
+
+  const cols = 11, rows = 9;
+
+  function getPt(c, r, t) {
+    // corners pinned top-left and top-right
+    const baseX = W * 0.06 + c * (W * 0.88 / cols);
+    const baseY = H * 0.08 + r * (H * 0.80 / rows);
+    // sag increases toward bottom
+    const sag = r * r * (H * 0.0028);
+    // converge toward center as rows increase (triangular shape)
+    const pinch = (c - cols/2) * (r / rows) * (W * 0.015);
+    const cx = baseX + pinch;
+    const cy = baseY + sag;
+    // ball push-out deformation
+    const bx = W * 0.40, by = H * 0.52;
+    const dx = cx - bx, dy = cy - by;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const ballR = W * 0.13;
+    const push = Math.max(0, ballR * 1.1 - dist) * 0.55;
+    const ang = Math.atan2(dy, dx);
+    // gentle breathing
+    const breath = Math.sin(t + c*0.4 + r*0.3) * (W * 0.003);
+    return [
+      cx + Math.cos(ang)*push + breath,
+      cy + Math.sin(ang)*push * 0.4 + Math.cos(t*0.7 + r*0.2) * (H*0.003)
+    ];
+  }
+
+  // highlight edge: xi at col 3 row 6, xj at col 5 row 6
+  const niC = 3, niR = 6, njC = 5, njR = 6;
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // ── draw mesh triangles (filled softly)
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const p00 = getPt(c,   r,   t);
+        const p10 = getPt(c+1, r,   t);
+        const p01 = getPt(c,   r+1, t);
+        const p11 = getPt(c+1, r+1, t);
+        // upper tri
+        ctx.beginPath();
+        ctx.moveTo(p00[0], p00[1]);
+        ctx.lineTo(p10[0], p10[1]);
+        ctx.lineTo(p11[0], p11[1]);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(160,200,220,0.18)';
+        ctx.fill();
+        // lower tri
+        ctx.beginPath();
+        ctx.moveTo(p00[0], p00[1]);
+        ctx.lineTo(p11[0], p11[1]);
+        ctx.lineTo(p01[0], p01[1]);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(140,190,215,0.15)';
+        ctx.fill();
+      }
+    }
+
+    // ── draw mesh edges
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c <= cols; c++) {
+        const p = getPt(c, r, t);
+        if (c < cols) {
+          const p2 = getPt(c+1, r, t);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(25,65,100,0.40)';
+          ctx.lineWidth = 1 * dpr;
+          ctx.stroke();
+        }
+        if (r < rows) {
+          const p2 = getPt(c, r+1, t);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(25,65,100,0.40)';
+          ctx.lineWidth = 1 * dpr;
+          ctx.stroke();
+        }
+        // diagonal
+        if (r < rows && c < cols) {
+          const p2 = getPt(c+1, r+1, t);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(25,65,100,0.22)';
+          ctx.lineWidth = 0.7 * dpr;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // ── ball sphere
+    const bx = W*0.40, by = H*0.52, br = W*0.13;
+    const grd = ctx.createRadialGradient(bx-br*0.35, by-br*0.35, br*0.05, bx, by, br);
+    grd.addColorStop(0,'#efefef');
+    grd.addColorStop(0.45,'#c0c0c0');
+    grd.addColorStop(0.8,'#888');
+    grd.addColorStop(1,'#555');
+    ctx.beginPath(); ctx.arc(bx, by, br, 0, Math.PI*2);
+    ctx.fillStyle = grd; ctx.fill();
+    // sphere grid lines
+    for (let i = 1; i < 5; i++) {
+      ctx.beginPath();
+      ctx.ellipse(bx, by - br + i*(br*2/5), br * Math.sin(i*Math.PI/5), br*0.12, 0, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(60,60,60,0.2)'; ctx.lineWidth = 0.8*dpr; ctx.stroke();
+    }
+    for (let i = 1; i < 6; i++) {
+      ctx.beginPath();
+      ctx.ellipse(bx, by, br*0.85, br * Math.sin(i*Math.PI/6) * 0.3, i*Math.PI/6, 0, Math.PI*2);
+      ctx.strokeStyle = 'rgba(60,60,60,0.15)'; ctx.lineWidth = 0.8*dpr; ctx.stroke();
+    }
+
+    // ── red corner pins
+    const pinR = 6 * dpr;
+    [[W*0.06, H*0.08],[W*0.94, H*0.08]].forEach(([px,py]) => {
+      ctx.beginPath(); ctx.arc(px, py, pinR, 0, Math.PI*2);
+      ctx.fillStyle = '#cc3333'; ctx.fill();
+    });
+
+    // ── xi, xj highlighted edge + nodes
+    const pi = getPt(niC, niR, t);
+    const pj = getPt(njC, njR, t);
+    const pmid = [(pi[0]+pj[0])/2, (pi[1]+pj[1])/2];
+
+    // connecting line (xi → xij → xj)
+    ctx.beginPath(); ctx.moveTo(pi[0],pi[1]); ctx.lineTo(pj[0],pj[1]);
+    ctx.strokeStyle = '#c83030'; ctx.lineWidth = 2.5*dpr; ctx.stroke();
+
+    // arrowhead toward xj
+    const ang2 = Math.atan2(pj[1]-pi[1], pj[0]-pi[0]);
+    const aSize = 8*dpr;
+    ctx.beginPath();
+    ctx.moveTo(pj[0], pj[1]);
+    ctx.lineTo(pj[0] - aSize*Math.cos(ang2-0.4), pj[1] - aSize*Math.sin(ang2-0.4));
+    ctx.lineTo(pj[0] - aSize*Math.cos(ang2+0.4), pj[1] - aSize*Math.sin(ang2+0.4));
+    ctx.closePath();
+    ctx.fillStyle = '#c83030'; ctx.fill();
+
+    // nodes
+    [pi, pj].forEach(p => {
+      ctx.beginPath(); ctx.arc(p[0], p[1], 5.5*dpr, 0, Math.PI*2);
+      ctx.fillStyle = '#d03030'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5*dpr; ctx.stroke();
+    });
+
+    // labels
+    const fs = Math.max(13, W * 0.038);
+    ctx.font = `italic ${fs}px EB Garamond, Georgia, serif`;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('xᵢ', pi[0] - fs*1.1, pi[1] + fs*0.38);
+    ctx.fillText('xⱼ', pj[0] + fs*0.3, pj[1] + fs*0.38);
+    // xij label at midpoint above edge
+    const fsSmall = Math.max(11, W * 0.030);
+    ctx.font = `italic ${fsSmall}px EB Garamond, Georgia, serif`;
+    ctx.fillText('xᵢⱼ', pmid[0] - fsSmall*0.8, pmid[1] - 8*dpr);
+
+    // ── radius annotation box
+    const boxW = W * 0.46, boxH = H * 0.11;
+    const boxX = W * 0.27, boxY = H * 0.80;
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 8*dpr);
+    ctx.fillStyle = 'rgba(200,228,245,0.82)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(120,170,210,0.6)'; ctx.lineWidth = 1*dpr; ctx.stroke();
+    ctx.font = `${Math.max(10, W*0.030)}px JetBrains Mono, monospace`;
+    ctx.fillStyle = '#1a2a4a';
+    ctx.textAlign = 'center';
+    ctx.fillText('|xᵢ − xⱼ| < r_W', boxX + boxW/2, boxY + boxH*0.65);
+    ctx.textAlign = 'left';
+
+    t += 0.008;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ─── MESH SPACE CANVAS ────────────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('mesh-canvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const W = rect.width * dpr;
+  const H = rect.height * dpr;
+  canvas.width = W;
+  canvas.height = H;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  const ctx = canvas.getContext('2d');
+
+  const cols = 18, rows = 14;
+
+  function getPt(c, r) {
+    return [
+      W * 0.04 + c * (W * 0.92 / cols),
+      H * 0.05 + r * (H * 0.88 / rows)
+    ];
+  }
+
+  const niC = 6, niR = 8, njC = 12, njR = 8;
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+
+    // ── filled triangles
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        const p00 = getPt(c,   r);
+        const p10 = getPt(c+1, r);
+        const p01 = getPt(c,   r+1);
+        const p11 = getPt(c+1, r+1);
+        ctx.beginPath();
+        ctx.moveTo(p00[0],p00[1]); ctx.lineTo(p10[0],p10[1]); ctx.lineTo(p11[0],p11[1]);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(100,170,130,0.15)'; ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(p00[0],p00[1]); ctx.lineTo(p11[0],p11[1]); ctx.lineTo(p01[0],p01[1]);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(90,160,120,0.12)'; ctx.fill();
+      }
+    }
+
+    // ── grid edges
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c <= cols; c++) {
+        const p = getPt(c, r);
+        if (c < cols) {
+          const p2 = getPt(c+1, r);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(20,90,50,0.32)'; ctx.lineWidth = 0.9*dpr; ctx.stroke();
+        }
+        if (r < rows) {
+          const p2 = getPt(c, r+1);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(20,90,50,0.32)'; ctx.lineWidth = 0.9*dpr; ctx.stroke();
+        }
+        if (r < rows && c < cols) {
+          const p2 = getPt(c+1, r+1);
+          ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(p2[0],p2[1]);
+          ctx.strokeStyle = 'rgba(20,90,50,0.16)'; ctx.lineWidth = 0.6*dpr; ctx.stroke();
+        }
+      }
+    }
+
+    // ── ui, uj highlighted edge
+    const pi = getPt(niC, niR);
+    const pj = getPt(njC, njR);
+
+    ctx.beginPath(); ctx.moveTo(pi[0],pi[1]); ctx.lineTo(pj[0],pj[1]);
+    ctx.strokeStyle = '#c03030'; ctx.lineWidth = 2.8*dpr; ctx.stroke();
+
+    [pi, pj].forEach(p => {
+      ctx.beginPath(); ctx.arc(p[0], p[1], 6*dpr, 0, Math.PI*2);
+      ctx.fillStyle = '#d03030'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5*dpr; ctx.stroke();
+    });
+
+    const fs = Math.max(13, W * 0.036);
+    ctx.font = `italic ${fs}px EB Garamond, Georgia, serif`;
+    ctx.fillStyle = '#1a1a1a';
+    ctx.fillText('uᵢ', pi[0] - fs*1.2, pi[1] + fs*0.38);
+    ctx.fillText('uⱼ', pj[0] + fs*0.3,  pj[1] + fs*0.38);
+  }
+
+  draw();
+  // gentle animation: re-draw on interval to keep labels sharp
+  setInterval(draw, 2000);
+})();
+
+}); // end window.onload
+</script>
+</body>
+</html>
